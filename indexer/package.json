@@ -1,0 +1,18 @@
+{
+  "name": "dispute-explorer-indexer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npx ponder start --schema ponder_v3",
+    "dev": "npx ponder dev"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "ponder": "^0.16.6",
+    "viem": "^2.47.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}

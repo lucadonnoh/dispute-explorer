@@ -1,0 +1,82 @@
+export const FaultDisputeGameAbi = [
+  {
+    type: "event",
+    name: "Move",
+    inputs: [
+      { name: "parentIndex", type: "uint256", indexed: true },
+      { name: "claim", type: "bytes32", indexed: true },
+      { name: "claimant", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "Resolved",
+    inputs: [
+      { name: "status", type: "uint8", indexed: true },
+    ],
+  },
+  {
+    type: "function",
+    name: "status",
+    inputs: [],
+    outputs: [{ name: "", type: "uint8" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "gameType",
+    inputs: [],
+    outputs: [{ name: "", type: "uint32" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "rootClaim",
+    inputs: [],
+    outputs: [{ name: "", type: "bytes32" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "l2BlockNumber",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "createdAt",
+    inputs: [],
+    outputs: [{ name: "", type: "uint64" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "resolvedAt",
+    inputs: [],
+    outputs: [{ name: "", type: "uint64" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "claimDataLen",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "claimData",
+    inputs: [{ name: "_index", type: "uint256" }],
+    outputs: [
+      { name: "parentIndex", type: "uint32" },
+      { name: "counteredBy", type: "address" },
+      { name: "claimant", type: "address" },
+      { name: "bond", type: "uint128" },
+      { name: "claim", type: "bytes32" },
+      { name: "position", type: "uint128" },
+      { name: "clock", type: "uint128" },
+    ],
+    stateMutability: "view",
+  },
+] as const;
