@@ -19,8 +19,8 @@ import { GAME_TYPE_LABELS, type GameStatus } from "@/lib/types";
 export function GameDetail({ id }: { id: string }) {
   const { game, isLoading: gameLoading } = useGame(id);
   const { moves, isLoading: movesLoading } = useMoves(id);
-  const hasContested = !gameLoading && game && game.moveCount > 0;
-  const { claims, isLoading: claimsLoading } = useClaims(id, !!hasContested);
+  const gameReady = !gameLoading && !!game;
+  const { claims, isLoading: claimsLoading } = useClaims(id, gameReady);
 
   const sortedMoves = [...moves].sort((a, b) => {
     const tsDiff = Number(a.timestamp) - Number(b.timestamp);
@@ -178,7 +178,7 @@ export function GameDetail({ id }: { id: string }) {
       </div>
 
       {/* Move Graph */}
-      {hasContested && (
+      {gameReady && (
         <div className="border border-terminal-border bg-terminal-panel mb-4">
           <div className="px-4 py-3 border-b border-terminal-border">
             <h3 className="text-sm font-semibold text-zinc-200">

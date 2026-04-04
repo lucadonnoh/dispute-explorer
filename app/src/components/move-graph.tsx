@@ -181,10 +181,10 @@ export function MoveGraph({
   claims: ClaimData[];
   moves: Move[];
 }) {
-  if (claims.length <= 1) {
+  if (claims.length === 0) {
     return (
       <div className="px-4 py-6 text-center text-xs text-terminal-muted">
-        No moves to visualize
+        No claims found
       </div>
     );
   }
