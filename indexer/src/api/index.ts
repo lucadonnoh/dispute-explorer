@@ -3,13 +3,16 @@ import { cors } from "hono/cors";
 import { db } from "ponder:api";
 import { game, move } from "ponder:schema";
 import { eq, desc, and, gt, sql } from "ponder";
-import { createPublicClient, http, getAddress } from "viem";
+import { createPublicClient, fallback, http, getAddress } from "viem";
 import { mainnet } from "viem/chains";
 import { FaultDisputeGameAbi } from "../../abis/FaultDisputeGame";
+import { RPC_URLS } from "../../rpc";
 
+// viem's fallback transport tries each RPC in order, moving to the next on
+// failure, so on-chain reads keep working if the primary RPC is down.
 const publicClient = createPublicClient({
   chain: mainnet,
-  transport: http(process.env.PONDER_RPC_URL_1),
+  transport: fallback(RPC_URLS.map((url) => http(url))),
 });
 
 const app = new Hono();

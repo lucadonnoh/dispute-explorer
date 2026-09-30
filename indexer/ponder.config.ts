@@ -1,7 +1,8 @@
 import { createConfig } from "ponder";
-import { http, parseAbiItem } from "viem";
+import { parseAbiItem } from "viem";
 import { DisputeGameFactoryAbi } from "./abis/DisputeGameFactory";
 import { FaultDisputeGameAbi } from "./abis/FaultDisputeGame";
+import { RPC_URLS } from "./rpc";
 
 const disputeGameCreatedEvent = parseAbiItem(
   "event DisputeGameCreated(address indexed disputeProxy, uint32 indexed gameType, bytes32 indexed rootClaim)"
@@ -43,7 +44,13 @@ export default createConfig({
   chains: {
     mainnet: {
       id: 1,
-      rpc: http(process.env.PONDER_RPC_URL_1),
+      // Passing an array makes Ponder treat each URL as a separate backend with
+      // its own health tracking. See ./rpc.ts for the endpoint list and why
+      // fallbacks are opt-in.
+      rpc: RPC_URLS,
+      // Our Erigon node rejects eth_getLogs spanning more than 1000 blocks.
+      // Without this, Ponder keeps probing larger ranges and backfills crawl.
+      ethGetLogsBlockRange: 1000,
     },
   },
   contracts,
