@@ -1,0 +1,69 @@
+# Production stack on eth-node, next to the Erigon archive node.
+#
+# Every service uses host networking and listens on loopback only:
+#   13100  app       (Next.js)
+#   13101  indexer   (Ponder: API, /health, /ready, /metrics)
+#   13102  postgres
+# The system Caddy (caddy/disputes.caddy) is the only public entrypoint; the
+# Cloudflare tunnel on the rpi forwards disputes.slopo.net to it.
+#
+# Deploy with ./deploy.sh from a laptop. Secrets live in .env next to this file
+# on the host (POSTGRES_PASSWORD), never in git.
+
+name: dispute-explorer
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    network_mode: host
+    restart: unless-stopped
+    command: ["postgres", "-c", "listen_addresses=127.0.0.1", "-c", "port=13102"]
+    environment:
+      POSTGRES_USER: ponder
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_DB: ponder
+    volumes:
+      - postgres:/var/lib/postgresql
+    shm_size: 256mb
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "13102", "-U", "ponder"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  indexer:
+    build: ../indexer
+    network_mode: host
+    restart: unless-stopped
+    init: true
+    # Run binaries directly (not via npm) so SIGTERM reaches Ponder and it
+    # releases its schema lock on shutdown instead of making the next start
+    # wait out the lock timeout.
+    command: ["node_modules/.bin/ponder", "start", "--hostname", "127.0.0.1", "--port", "13101"]
+    environment:
+      # Bump when indexing logic changes; Ponder rebuilds the new schema from
+      # the ponder_sync cache. See the README.
+      DATABASE_SCHEMA: ponder_v4
+      # Erigon's HTTP RPC on the host loopback. No fallbacks: see indexer/rpc.ts.
+      PONDER_RPC_URL_1: http://127.0.0.1:28545
+      DATABASE_URL: postgresql://ponder:${POSTGRES_PASSWORD}@127.0.0.1:13102/ponder
+    mem_limit: 2g
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build:
+      context: ../app
+      args:
+        # The indexer API is served same-origin under /api by Caddy.
+        NEXT_PUBLIC_INDEXER_URL: /api
+    network_mode: host
+    restart: unless-stopped
+    init: true
+    command: ["node_modules/.bin/next", "start", "-H", "127.0.0.1", "-p", "13100"]
+    mem_limit: 512m
+
+volumes:
+  postgres:

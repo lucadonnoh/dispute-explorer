@@ -3,9 +3,9 @@ FROM node:22-slim
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 
 EXPOSE 42069
-CMD ["npm", "run", "start"]
+CMD ["node_modules/.bin/ponder", "start"]

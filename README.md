@@ -56,24 +56,44 @@ npm run dev                        # runs on :3000
 
 ## Deployment
 
-Deployed on Railway with PostgreSQL. See `Dockerfile` in each directory.
+Runs on `eth-node`, the home server that also runs the Erigon archive node,
+with Docker Compose (`deploy/docker-compose.yml`): Postgres, the indexer and
+the app, all on loopback. The indexer reads from Erigon directly, with no
+public RPCs involved.
 
 ```bash
-# Deploy indexer
-cd indexer && railway up . --service indexer --path-as-root
-
-# Deploy app
-cd app && railway up . --service app --path-as-root
+./deploy/deploy.sh   # rsyncs the working tree to eth-node and rebuilds
 ```
+
+Traffic path: Cloudflare → tunnel (cloudflared on the rpi) → Caddy on eth-node
+(`deploy/caddy/disputes.caddy`) → app, with `/api/*` going to the indexer.
+
+One-time host setup, already done:
+- `deploy/.env` on the host with `POSTGRES_PASSWORD`
+- `deploy/caddy/disputes.caddy` installed as `/etc/caddy/conf.d/disputes-public.caddy`
+- a ufw rule admitting only the rpi to port 15103
+- a `disputes.slopo.net` ingress rule in the rpi's `/etc/cloudflared/config.yml`
+
+Monitoring: two Uptime Kuma monitors on the rpi notify ntfy (`homelab`).
+"Disputes explorer (public)" checks the site end to end. "Disputes indexer
+freshness" reads `/api/status` and goes down if the indexer is unreachable or
+its latest block is more than 15 minutes old.
+
+Changing `ponder.schema.ts`, the `contracts` in `ponder.config.ts` or any file
+under `indexer/src/` except `src/api/` changes Ponder's build ID. The indexer
+then refuses the existing schema. Bump `DATABASE_SCHEMA` in the compose file
+when that happens; the new schema rebuilds from the `ponder_sync` cache in a
+few minutes. Restarts take about 20s while Ponder waits out its schema lock.
 
 ## Environment variables
 
 **Indexer:**
-- `PONDER_RPC_URL_1` — Ethereum L1 RPC endpoint
-- `DATABASE_URL` — PostgreSQL connection string (production only)
+- `PONDER_RPC_URL_1`: Ethereum L1 RPC endpoint (archive node)
+- `PONDER_RPC_FALLBACK_URLS`: optional comma-separated fallback RPCs (see `indexer/rpc.ts` before adding any)
+- `DATABASE_URL`, `DATABASE_SCHEMA`: PostgreSQL connection and schema (production only)
 
 **App:**
-- `NEXT_PUBLIC_INDEXER_URL` — Indexer API URL
+- `NEXT_PUBLIC_INDEXER_URL`: Indexer API URL, baked in at build time (`/api` in production)
 
 ## License
 

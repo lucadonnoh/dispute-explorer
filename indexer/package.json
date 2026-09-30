@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "npx ponder start --schema ponder_v3",
+    "start": "ponder start",
     "dev": "npx ponder dev"
   },
   "type": "commonjs",
